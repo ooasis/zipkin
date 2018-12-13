@@ -14,20 +14,27 @@
 package zipkin2.storage.snowflake;
 
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
+import zipkin2.storage.snowflake.internal.generated.tables.SpanAnnotations;
+import zipkin2.storage.snowflake.internal.generated.tables.SpanTags;
+import zipkin2.storage.snowflake.internal.generated.tables.Spans;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 class SnowflakeSpanStore implements SpanStore {
 
-  DataSourceCall.Factory dataSourceCallFactory;
+  private DataSourceCall.Factory dataSourceCallFactory;
 
   public SnowflakeSpanStore(SnowflakeStorage snowflakeStorage) {
     dataSourceCallFactory = new DataSourceCall.Factory(
@@ -36,85 +43,71 @@ class SnowflakeSpanStore implements SpanStore {
       snowflakeStorage.executor());
   }
 
-  Span buildSpan(long traceId, long id) {
-    Span span = Span.newBuilder()
-      .traceId(1000L, traceId)
-      .id(id)
-      .parentId(id + 1)
-      .name("Span " + id)
-      .timestamp(System.currentTimeMillis())
-      .duration(1000L)
-      .kind(Span.Kind.CLIENT)
-      .localEndpoint(Endpoint.newBuilder()
-        .serviceName("local service")
-        .ip("127.0.0.1")
-        .port(9899)
-        .build())
-      .remoteEndpoint(Endpoint.newBuilder()
-        .serviceName("service me")
-        .ip("192.168.0.8")
-        .port(80)
-        .build())
-      .putTag("test", "case " + id)
-      .addAnnotation(System.currentTimeMillis() + 100L, "step 1")
-      .build();
-    return span;
-  }
-
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
     Function<DSLContext, List<List<Span>>> f = dslContext -> {
-      List<Span> trace1 = new ArrayList<>();
-      trace1.add(buildSpan(1, 1));
-      trace1.add(buildSpan(1, 2));
-      trace1.add(buildSpan(1, 3));
+      Map<String, List<Span>> allSpans = new HashMap<>();
 
-      List<Span> trace2 = new ArrayList<>();
-      trace2.add(buildSpan(2, 1));
-      trace2.add(buildSpan(2, 2));
-      trace2.add(buildSpan(2, 3));
-
-      List<List<Span>> traces = new ArrayList<>();
-      traces.add(trace1);
-      traces.add(trace2);
-      return traces;
+      dslContext
+        .select()
+        .from(Spans.SPANS)
+        .orderBy(Spans.SPANS.TRACE_ID.desc())
+        .limit(100)
+        .stream()
+        .forEach(r -> {
+          Span span = buildSpan(r);
+          List<Span> spans;
+          if (allSpans.containsKey(span.traceId())) {
+            spans = allSpans.get(span.traceId());
+          } else {
+            spans = new ArrayList<>();
+            allSpans.put(span.traceId(), spans);
+          }
+          spans.add(span);
+        });
+      return new ArrayList<>(allSpans.values());
     };
+
     return dataSourceCallFactory.create(f);
   }
 
   @Override
   public Call<List<Span>> getTrace(String traceId) {
-    Function<DSLContext, List<Span>> f = dslContext -> {
-      List<Span> trace = new ArrayList<>();
-      trace.add(buildSpan(1, 1));
-      trace.add(buildSpan(1, 2));
-      trace.add(buildSpan(1, 3));
-      return trace;
-    };
+    Function<DSLContext, List<Span>> f = dslContext -> dslContext
+      .select()
+      .from(Spans.SPANS)
+      .leftOuterJoin(SpanAnnotations.SPAN_ANNOTATIONS)
+      .on(Spans.SPANS.TRACE_ID.eq(SpanAnnotations.SPAN_ANNOTATIONS.TRACE_ID))
+      .leftOuterJoin(SpanTags.SPAN_TAGS)
+      .on(Spans.SPANS.TRACE_ID.eq(SpanTags.SPAN_TAGS.TRACE_ID))
+      .where(Spans.SPANS.TRACE_ID.eq(traceId))
+      .stream()
+      .map(this::buildSpan)
+      .collect(Collectors.toList());
+
     return dataSourceCallFactory.create(f);
   }
 
   @Override
   public Call<List<String>> getServiceNames() {
-    Function<DSLContext, List<String>> f = dslContext -> {
-      List<String> serviceNames = new ArrayList<>();
-      serviceNames.add("Service A");
-      serviceNames.add("Service B");
-      serviceNames.add("Service C");
-      return serviceNames;
-    };
+    Function<DSLContext, List<String>> f = dslContext -> dslContext
+      .selectDistinct(Spans.SPANS.LOCAL_SERVICE_NAME)
+      .from(Spans.SPANS)
+      .fetch()
+      .getValues(Spans.SPANS.LOCAL_SERVICE_NAME);
+
     return dataSourceCallFactory.create(f);
   }
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
-    Function<DSLContext, List<String>> f = dslContext -> {
-      List<String> spanNames = new ArrayList<>();
-      spanNames.add("Span A");
-      spanNames.add("Span B");
-      spanNames.add("Span C");
-      return spanNames;
-    };
+    Function<DSLContext, List<String>> f = dslContext -> dslContext
+      .selectDistinct(Spans.SPANS.NAME)
+      .from(Spans.SPANS)
+      .where(Spans.SPANS.LOCAL_SERVICE_NAME.eq(serviceName))
+      .fetch()
+      .getValues(Spans.SPANS.NAME);
+
     return dataSourceCallFactory.create(f);
   }
 
@@ -122,5 +115,44 @@ class SnowflakeSpanStore implements SpanStore {
   public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     return Call.emptyList();
   } // not final for testing
+
+
+  private Span buildSpan(Record r) {
+    Span.Builder builder = Span.newBuilder()
+      .traceId(r.get(Spans.SPANS.TRACE_ID))
+      .id(r.get(Spans.SPANS.ID))
+      .name(r.get(Spans.SPANS.NAME))
+      .kind(Span.Kind.valueOf(r.get(Spans.SPANS.KIND)))
+      .timestamp(r.get(Spans.SPANS.TIMESTAMP))
+      .duration(r.get(Spans.SPANS.DURATION));
+
+    if (r.get(Spans.SPANS.DEBUG) != null) {
+      builder.debug(r.get(Spans.SPANS.DEBUG));
+    }
+    if (r.get(Spans.SPANS.SHARE) != null) {
+      builder.shared(r.get(Spans.SPANS.SHARE));
+    }
+    if (r.get(Spans.SPANS.PARENT_ID) != null) {
+      builder.parentId(r.get(Spans.SPANS.PARENT_ID));
+    }
+
+    builder
+      .localEndpoint(
+        Endpoint.newBuilder()
+          .serviceName(r.get(Spans.SPANS.LOCAL_SERVICE_NAME))
+          .ip(r.get(Spans.SPANS.LOCAL_IPV4))
+          .port(r.get(Spans.SPANS.LOCAL_PORT))
+          .build()
+      )
+      .remoteEndpoint(
+        Endpoint.newBuilder()
+          .serviceName(r.get(Spans.SPANS.REMOTE_SERVICE_NAME))
+          .ip(r.get(Spans.SPANS.REMOTE_IPV4))
+          .port(r.get(Spans.SPANS.REMOTE_PORT))
+          .build()
+      );
+
+    return builder.build();
+  }
 
 }
