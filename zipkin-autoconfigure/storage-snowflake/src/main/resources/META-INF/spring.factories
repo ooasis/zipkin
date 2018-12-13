@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+zipkin2.autoconfigure.storage.snowflake.ZipkinSnowflakeStorageAutoConfiguration,\
+zipkin2.autoconfigure.storage.snowflake.TracingZipkinSnowflakeStorageAutoConfiguration

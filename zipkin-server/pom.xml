@@ -207,6 +207,14 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Snowflake backend -->
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-autoconfigure-storage-snowflake</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Kafka Collector -->
     <dependency>
       <groupId>io.zipkin.java</groupId>

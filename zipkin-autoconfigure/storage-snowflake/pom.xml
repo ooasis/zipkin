@@ -18,41 +18,39 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.zipkin2</groupId>
-    <artifactId>parent</artifactId>
+    <groupId>io.zipkin.java</groupId>
+    <artifactId>zipkin-autoconfigure</artifactId>
     <version>2.11.11-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-storage-parent</artifactId>
-  <name>Storage</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-autoconfigure-storage-snowflake</artifactId>
+  <name>Auto Configuration: Snowflake Storage</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
-    <main.java.version>1.8</main.java.version>
-    <main.signature.artifact>java18</main.signature.artifact>
+    <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
 
-  <modules>
-    <module>cassandra-v1</module>
-    <module>cassandra</module>
-    <module>mysql-v1</module>
-    <module>elasticsearch</module>
-    <module>snowflake</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-storage-snowflake</artifactId>
+    </dependency>
 
-  <build>
-    <plugins>
-      <!-- disable retrolambda as we set language level to 1.8 -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <dependency>
+      <groupId>net.snowflake</groupId>
+      <artifactId>snowflake-jdbc</artifactId>
+      <version>3.6.14</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>

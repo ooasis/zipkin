@@ -49,7 +49,7 @@ public abstract class CassandraStorage extends StorageComponent {
   }
 
   public static Builder newBuilder() {
-    return new AutoValue_CassandraStorage.Builder()
+    return new $AutoValue_CassandraStorage.Builder()
         .strictTraceId(true)
         .searchEnabled(true)
         .keyspace(Schema.DEFAULT_KEYSPACE)

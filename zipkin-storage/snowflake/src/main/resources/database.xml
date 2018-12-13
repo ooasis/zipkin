@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<information_schema xmlns="http://www.jooq.org/xsd/jooq-meta-3.11.0.xsd">
+  <schemata>
+    <schema>
+      <schema_name>PUBLIC</schema_name>
+    </schema>
+  </schemata>
+
+  <tables>
+    <table>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+    </table>
+    <table>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_ANNOTATIONS</table_name>
+    </table>
+    <table>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_TAGS</table_name>
+    </table>
+  </tables>
+
+  <columns>
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>TRACE_ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>1</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>NAME</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>2</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>PARENT_ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>3</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>4</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>KIND</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>5</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>TIMESTAMP</column_name>
+      <data_type>BIGINT</data_type>
+      <ordinal_position>6</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>DURATION</column_name>
+      <data_type>BIGINT</data_type>
+      <ordinal_position>7</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>DEBUG</column_name>
+      <data_type>BOOLEAN</data_type>
+      <ordinal_position>8</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>SHARE</column_name>
+      <data_type>BOOLEAN</data_type>
+      <ordinal_position>9</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>LOCAL_SERVICE_NAME</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>10</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>LOCAL_IPV4</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>11</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>LOCAL_IPV6</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>12</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>LOCAL_PORT</column_name>
+      <data_type>INTEGER</data_type>
+      <ordinal_position>13</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>REMOTE_SERVICE_NAME</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>14</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>REMOTE_IPV4</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>15</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>REMOTE_IPV6</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>16</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPANS</table_name>
+      <column_name>REMOTE_PORT</column_name>
+      <data_type>INTEGER</data_type>
+      <ordinal_position>17</ordinal_position>
+      <is_nullable>true</is_nullable>
+    </column>
+
+    <!-- annotations -->
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_ANNOTATIONS</table_name>
+      <column_name>TRACE_ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>1</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_ANNOTATIONS</table_name>
+      <column_name>ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>2</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_ANNOTATIONS</table_name>
+      <column_name>A_TIMESTAMP</column_name>
+      <data_type>BIGINT</data_type>
+      <ordinal_position>3</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_ANNOTATIONS</table_name>
+      <column_name>A_VALUE</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>4</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <!-- tags -->
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_TAGS</table_name>
+      <column_name>TRACE_ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>1</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_TAGS</table_name>
+      <column_name>ID</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>2</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_TAGS</table_name>
+      <column_name>T_KEY</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>3</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+    <column>
+      <table_schema>PUBLIC</table_schema>
+      <table_name>SPAN_TAGS</table_name>
+      <column_name>T_VALUE</column_name>
+      <data_type>VARCHAR</data_type>
+      <ordinal_position>4</ordinal_position>
+      <is_nullable>false</is_nullable>
+    </column>
+
+  </columns>
+
+</information_schema>
