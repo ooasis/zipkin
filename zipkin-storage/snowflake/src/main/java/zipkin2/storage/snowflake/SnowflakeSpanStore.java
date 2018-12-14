@@ -13,8 +13,11 @@
  */
 package zipkin2.storage.snowflake;
 
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -30,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 class SnowflakeSpanStore implements SpanStore {
 
@@ -48,14 +50,40 @@ class SnowflakeSpanStore implements SpanStore {
     Function<DSLContext, List<List<Span>>> f = dslContext -> {
       Map<String, List<Span>> allSpans = new HashMap<>();
 
+      Condition whereClause = Spans.SPANS.TIMESTAMP.add(Spans.SPANS.DURATION).le(request.endTs() * 1000L);
+      whereClause = whereClause.and(Spans.SPANS.TIMESTAMP.ge((request.endTs() - request.lookback()) * 1000L));
+      if (request.serviceName() != null && !"all".equalsIgnoreCase(request.serviceName())) {
+        whereClause = whereClause.and(Spans.SPANS.LOCAL_SERVICE_NAME.eq(request.serviceName()));
+      }
+      if (request.spanName() != null && !"all".equalsIgnoreCase(request.spanName())) {
+        whereClause = whereClause.and(Spans.SPANS.NAME.eq(request.spanName()));
+      }
+      if (request.minDuration() != null) {
+        whereClause = whereClause.and(Spans.SPANS.DURATION.ge(request.minDuration() * 1000L));
+      }
+      if (request.maxDuration() != null) {
+        whereClause = whereClause.and(Spans.SPANS.DURATION.le(request.maxDuration() * 1000L));
+      }
+
+      for (Map.Entry<String, String> entry : request.annotationQuery().entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        if (value == null || "".equals(value)) {
+          whereClause = whereClause.and(SpanAnnotations.SPAN_ANNOTATIONS.A_VALUE.eq(key).or(SpanTags.SPAN_TAGS.T_KEY.eq(key)));
+        } else {
+          whereClause = whereClause.and(SpanTags.SPAN_TAGS.T_KEY.eq(key).and(SpanTags.SPAN_TAGS.T_VALUE.eq(value)));
+        }
+      }
+
       dslContext
         .select()
         .from(Spans.SPANS)
-        .orderBy(Spans.SPANS.TRACE_ID.desc())
-        .limit(100)
+        .where(whereClause)
+        .orderBy(Spans.SPANS.TIMESTAMP.desc())
+        .limit(request.limit())
         .stream()
         .forEach(r -> {
-          Span span = buildSpan(r);
+          Span span = buildSpan(r).build();
           List<Span> spans;
           if (allSpans.containsKey(span.traceId())) {
             spans = allSpans.get(span.traceId());
@@ -73,17 +101,31 @@ class SnowflakeSpanStore implements SpanStore {
 
   @Override
   public Call<List<Span>> getTrace(String traceId) {
-    Function<DSLContext, List<Span>> f = dslContext -> dslContext
-      .select()
-      .from(Spans.SPANS)
-      .leftOuterJoin(SpanAnnotations.SPAN_ANNOTATIONS)
-      .on(Spans.SPANS.TRACE_ID.eq(SpanAnnotations.SPAN_ANNOTATIONS.TRACE_ID))
-      .leftOuterJoin(SpanTags.SPAN_TAGS)
-      .on(Spans.SPANS.TRACE_ID.eq(SpanTags.SPAN_TAGS.TRACE_ID))
-      .where(Spans.SPANS.TRACE_ID.eq(traceId))
-      .stream()
-      .map(this::buildSpan)
-      .collect(Collectors.toList());
+    Function<DSLContext, List<Span>> f = dslContext -> {
+      Map<Record, Result<Record>> groupedSpans = dslContext
+        .select()
+        .from(Spans.SPANS)
+        .leftOuterJoin(SpanAnnotations.SPAN_ANNOTATIONS)
+        .on(Spans.SPANS.TRACE_ID.eq(SpanAnnotations.SPAN_ANNOTATIONS.TRACE_ID).and(Spans.SPANS.ID.eq(SpanAnnotations.SPAN_ANNOTATIONS.ID)))
+        .leftOuterJoin(SpanTags.SPAN_TAGS)
+        .on(Spans.SPANS.TRACE_ID.eq(SpanTags.SPAN_TAGS.TRACE_ID).and(Spans.SPANS.ID.eq(SpanTags.SPAN_TAGS.ID)))
+        .where(Spans.SPANS.TRACE_ID.eq(traceId))
+        .fetchGroups(Spans.SPANS);
+
+      List<Span> spans = new ArrayList<>();
+      groupedSpans.forEach((key, value) -> {
+        Span.Builder span = buildSpan(key);
+        for (Record v : value) {
+          if (v.get(SpanTags.SPAN_TAGS.T_KEY) != null &&  v.get(SpanTags.SPAN_TAGS.T_VALUE) != null) {
+            span.putTag(v.get(SpanTags.SPAN_TAGS.T_KEY), v.get(SpanTags.SPAN_TAGS.T_VALUE));
+          } else if (v.get(SpanAnnotations.SPAN_ANNOTATIONS.A_TIMESTAMP) != null) {
+            span.addAnnotation(v.get(SpanAnnotations.SPAN_ANNOTATIONS.A_TIMESTAMP), v.get(SpanAnnotations.SPAN_ANNOTATIONS.A_VALUE));
+          }
+        }
+        spans.add(span.build());
+      });
+      return spans;
+    };
 
     return dataSourceCallFactory.create(f);
   }
@@ -117,7 +159,7 @@ class SnowflakeSpanStore implements SpanStore {
   } // not final for testing
 
 
-  private Span buildSpan(Record r) {
+  private Span.Builder buildSpan(Record r) {
     Span.Builder builder = Span.newBuilder()
       .traceId(r.get(Spans.SPANS.TRACE_ID))
       .id(r.get(Spans.SPANS.ID))
@@ -152,7 +194,7 @@ class SnowflakeSpanStore implements SpanStore {
           .build()
       );
 
-    return builder.build();
+    return builder;
   }
 
 }
